@@ -10,7 +10,7 @@ from sqlalchemy import select
 from werkzeug.exceptions import HTTPException
 from flask_wtf.csrf import generate_csrf
 
-from backend.app.core.config import ProductionConfig, get_config
+from backend.app.core.config import PROJECT_ROOT, ProductionConfig, get_config
 from backend.app.core.extensions import (
     cache,
     cors,
@@ -55,7 +55,9 @@ def create_app(config_object: type | dict[str, Any] | None = None) -> Flask:
     _register_csrf_protection(app)
     _register_error_handlers(app)
     _register_api_routes(app)
+    _register_seo_routes(app)
     _register_health_endpoint(app)
+    _register_cli_commands(app)
     return app
 
 
@@ -66,7 +68,11 @@ def _configure_logging(app: Flask) -> None:
 
 def _initialize_extensions(app: Flask) -> None:
     db.init_app(app)
-    migrate.init_app(app, db)
+    migrate.init_app(
+        app,
+        db,
+        directory=str(PROJECT_ROOT / "backend" / "migrations"),
+    )
     jwt.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
@@ -170,10 +176,22 @@ def _register_health_endpoint(app: Flask) -> None:
         return jsonify({"status": "ok"}), 200
 
 
+def _register_seo_routes(app: Flask) -> None:
+    from backend.app.seo import seo
+
+    app.register_blueprint(seo)
+
+
 def _register_api_routes(app: Flask) -> None:
     from backend.app.api.v1 import api_v1
 
     app.register_blueprint(api_v1)
+
+
+def _register_cli_commands(app: Flask) -> None:
+    from backend.app.cli import register_cli_commands
+
+    register_cli_commands(app)
 
 
 def _register_csrf_protection(app: Flask) -> None:

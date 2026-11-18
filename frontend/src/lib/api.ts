@@ -4,6 +4,27 @@ export interface ApiHealth {
   status: "ok";
 }
 
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content_html: string;
+  cover_image_url: string | null;
+  meta_description: string | null;
+  seo_keywords: string[];
+  canonical_url: string | null;
+  read_time_minutes: number;
+  published_at: string | null;
+  author: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+  };
+  categories: Array<{ id: string; name: string; slug: string }>;
+  tags: Array<{ id: string; name: string; slug: string }>;
+}
+
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "/api/v1",
   timeout: 10_000,
@@ -53,4 +74,15 @@ apiClient.interceptors.request.use(async (config) => {
 export async function fetchApiHealth(signal?: AbortSignal): Promise<ApiHealth> {
   const response = await apiClient.get<ApiHealth>("/health", { signal });
   return response.data;
+}
+
+export async function fetchPostBySlug(
+  slug: string,
+  signal?: AbortSignal,
+): Promise<BlogPost> {
+  const response = await apiClient.get<{ data: BlogPost }>(
+    `/posts/${encodeURIComponent(slug)}`,
+    { signal },
+  );
+  return response.data.data;
 }

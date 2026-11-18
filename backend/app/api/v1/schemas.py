@@ -82,19 +82,26 @@ class PostWriteSchema(StrictSchema):
     )
 
 
+class PostReadSchema(StrictSchema):
+    reading_time_seconds = fields.Int(
+        required=True,
+        validate=validate.Range(min=1, max=86_400),
+    )
+
+
 class CommentWriteSchema(StrictSchema):
     body = fields.Str(required=True, validate=validate.Length(min=1, max=5000))
     parent_id = fields.UUID(allow_none=True)
 
 
 class CategoryWriteSchema(StrictSchema):
-    name = fields.Str(required=True, validate=validate.Length(min=1, max=80))
+    name = fields.Str(validate=validate.Length(min=1, max=80))
     slug = fields.Str(validate=validate.Regexp(r"^[a-z0-9]+(?:-[a-z0-9]+)*$"))
     description = fields.Str(allow_none=True, validate=validate.Length(max=2000))
 
 
 class TagWriteSchema(StrictSchema):
-    name = fields.Str(required=True, validate=validate.Length(min=1, max=60))
+    name = fields.Str(validate=validate.Length(min=1, max=60))
     slug = fields.Str(validate=validate.Regexp(r"^[a-z0-9]+(?:-[a-z0-9]+)*$"))
 
 
@@ -121,3 +128,7 @@ class UserRoleUpdateSchema(StrictSchema):
         required=True,
         validate=validate.OneOf(["user", "author", "admin"]),
     )
+
+
+class UserStatusUpdateSchema(StrictSchema):
+    is_active = fields.Bool(required=True)

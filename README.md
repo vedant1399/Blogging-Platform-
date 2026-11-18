@@ -133,10 +133,17 @@ The API surface is grouped by resource:
 | Likes and bookmarks | `/api/v1` |
 | Notifications | `/api/v1/notifications` |
 | Administration | `/api/v1/admin` |
+| Media uploads | `/api/v1/users/me/avatar`, `/api/v1/posts/{post_id}/cover` |
 
 The API's generated or maintained endpoint documentation will be added alongside the endpoint implementation. Clients must treat server-side authorization and validation as authoritative.
 
 Account endpoints currently include `POST /api/v1/auth/register`, `/login`, `/refresh`, `/logout`, `/verify-email`, `/password-reset/request`, `/password-reset/confirm`, and `/password`; profile endpoints are `GET`, `PATCH`, and `DELETE /api/v1/users/me` plus `GET /api/v1/users/{username}`. The API returns short-lived access tokens for the `Authorization: Bearer` header and keeps rotating refresh tokens in an HttpOnly cookie. Unauthenticated or cookie-authenticated unsafe requests require the token returned by `GET /api/v1/csrf` in `X-CSRFToken`; the frontend API client obtains and attaches it automatically. Bearer-authenticated requests rely on the authorization header instead. Registration and password recovery require a configured mail transport.
+
+Publishing and discovery use `/api/v1/posts` with pagination, text search, category/tag/author/date filters, sorting, post preview, duplication, publication, archiving, and analytics events. Category and tag browsing is public; their management is administrator-only. Nested comments, likes, bookmarks, follows, notifications, reports, and admin user/report/analytics endpoints are also grouped under `/api/v1`. Scheduled publishing is performed by running `flask --app backend.wsgi:app publish-scheduled` periodically (for example, once per minute via the host scheduler). Create the initial administrator from a trusted shell with `flask --app backend.wsgi:app create-admin`.
+
+Authenticated authors can upload avatars with multipart field `image` to `POST /api/v1/users/me/avatar` and post covers to `POST /api/v1/posts/{post_id}/cover`. Uploads are size-limited, decoded and re-encoded as JPEG, PNG, or WebP, dimension-checked, stored under random filenames, and served from `/api/v1/uploads/{filename}` with `nosniff` and immutable caching headers. Cover uploads require post ownership or an administrator role.
+
+The public `GET /sitemap.xml` endpoint lists only published posts by active authors, and `GET /robots.txt` points crawlers to that sitemap while excluding private administration and account routes. Published article pages are available at `/posts/{slug}` in the client and populate document title, canonical, Open Graph, Twitter, and BlogPosting structured-data metadata when loaded.
 
 ## Security
 
@@ -159,6 +166,7 @@ Security controls must be verified in the route and deployment implementations; 
 Run backend tests from the repository root:
 
 ```powershell
+python -m pip install -r backend\requirements-dev.txt
 python -m pytest backend\tests
 ```
 
